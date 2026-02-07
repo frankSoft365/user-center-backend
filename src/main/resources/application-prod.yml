@@ -1,0 +1,9 @@
+# DataSource Config
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://192.168.41.130:3306/yuzhou
+    username: root
+    password: 12345
+server:
+  port: 8080
