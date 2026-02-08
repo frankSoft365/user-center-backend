@@ -93,6 +93,12 @@
             <version>1.15</version>
             <scope>compile</scope>
         </dependency>
+        <!-- 文件类型校验 -->
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.15.1</version>
+        </dependency>
         <!--aliyun OSS-->
         <dependency>
             <groupId>com.aliyun.oss</groupId>
@@ -114,6 +120,12 @@
             <groupId>org.glassfish.jaxb</groupId>
             <artifactId>jaxb-runtime</artifactId>
             <version>2.3.3</version>
+        </dependency>
+        <!-- 图片处理核心依赖 -->
+        <dependency>
+            <groupId>net.coobird</groupId>
+            <artifactId>thumbnailator</artifactId>
+            <version>0.4.19</version>
         </dependency>
     </dependencies>
 

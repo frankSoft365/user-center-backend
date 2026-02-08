@@ -2,6 +2,7 @@ package com.microsoft.controller;
 
 import com.microsoft.commen.Result;
 import com.microsoft.utils.AliyunOSSOperator;
+import com.microsoft.utils.AvatarUtils;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,14 +15,17 @@ import java.util.Objects;
 @RestController
 public class UploadController {
     @Resource
-    private AliyunOSSOperator aliyunOSSOperator;
+    private AvatarUtils avatarUtils;
 
     /**
      * 上传图片
      */
     @PostMapping("/upload")
     public Result<String> upload(MultipartFile avatar) throws Exception {
-        String url = aliyunOSSOperator.upload(avatar.getBytes(), Objects.requireNonNull(avatar.getOriginalFilename()));
+        // 校验
+        avatarUtils.verifyAvatar(avatar);
+        // 压缩 上传阿里云
+        String url = avatarUtils.compressAndUploadAvatar(avatar);
         log.info("上传了图片：{}", url);
         return Result.success(url);
     }
