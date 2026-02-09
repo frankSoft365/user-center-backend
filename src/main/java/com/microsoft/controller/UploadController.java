@@ -1,7 +1,6 @@
 package com.microsoft.controller;
 
 import com.microsoft.commen.Result;
-import com.microsoft.utils.AliyunOSSOperator;
 import com.microsoft.utils.AvatarUtils;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;

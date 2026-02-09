@@ -32,6 +32,9 @@ public class AvatarUtils {
     @Resource
     private AliyunOSSOperator aliyunOSSOperator;
 
+    /**
+     * 没有返回值校验图片只看抛异常
+     */
     public void verifyAvatar(MultipartFile file) {
         if (file.isEmpty()) {
             throw new BusinessException(ErrorCode.PARAM_ERROR, "上传头像为空！");
@@ -64,6 +67,9 @@ public class AvatarUtils {
         }
     }
 
+    /**
+     * 图片压缩并上传阿里云
+     */
     public String compressAndUploadAvatar(MultipartFile file) {
         // 文件压缩
         ByteArrayOutputStream outputStream;

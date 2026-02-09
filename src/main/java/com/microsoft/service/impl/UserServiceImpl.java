@@ -6,17 +6,19 @@ import com.microsoft.commen.ErrorCode;
 import com.microsoft.exception.BusinessException;
 import com.microsoft.mapper.UserMapper;
 import com.microsoft.model.domain.User;
+import com.microsoft.model.response.UserLoginResponse;
 import com.microsoft.service.UserService;
-import jakarta.servlet.http.HttpServletRequest;
+import com.microsoft.utils.JwtUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Pattern;
 
-import static com.microsoft.constant.UserConstant.USER_LOGIN_STATE;
 
 @Slf4j
 @Service
@@ -86,7 +88,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
      * 用户登录
      */
     @Override
-    public User userLogin(String userAccount, String password, HttpServletRequest request) {
+    public UserLoginResponse userLogin(String userAccount, String password) {
         // 校验账户名与密码是否合法
         // 用户账户名 密码 校验密码不能为空或者空字符串
         if (StringUtils.isAllBlank(userAccount, password)) {
@@ -122,13 +124,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (!md5Hex.equals(user.getPassword())) {
             throw new BusinessException(ErrorCode.PARAM_ERROR, "用户名或密码错误");
         }
-        // 如果一致 登录成功 准备返回用户信息 脱敏
-        User maskedUser = getMaskedUser(user);
-        // 设置session 记录用户登录态
-        request.getSession().setAttribute(USER_LOGIN_STATE, maskedUser);
-        // 返回用户信息
+        // 如果一致 登录成功 发放token
+        Map<String, Object> dataMap = new HashMap<>();
+        dataMap.put("id", user.getId());
+        dataMap.put("userAccount", user.getUserAccount());
+        String token = JwtUtils.generateToken(dataMap);
         log.info("用户登录成功");
-        return maskedUser;
+        return new UserLoginResponse(user.getId(), user.getUserAccount(), token);
     }
 
     @Override
@@ -149,12 +151,5 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         maskedUser.setRole(originUser.getRole());
         return maskedUser;
     }
-    /**
-     * 用户注销
-     */
-    @Override
-    public void userOutLogin(HttpServletRequest request) {
-        request.getSession().removeAttribute(USER_LOGIN_STATE);
-        log.info("移除session用户登录态");
-    }
+
 }
