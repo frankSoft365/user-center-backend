@@ -25,4 +25,16 @@ public enum UserRoleEnum {
         }
         return null;
     }
+
+    public static UserRoleEnum getEnumByName(String name) {
+        if (name == null) {
+            return UserRoleEnum.DEFAULT_ROLE;
+        }
+        for (UserRoleEnum userRoleEnum : UserRoleEnum.values()) {
+            if (Objects.equals(userRoleEnum.name, name)) {
+                return userRoleEnum;
+            }
+        }
+        return null;
+    }
 }

@@ -1,0 +1,49 @@
+package com.microsoft.model.response;
+
+import com.microsoft.model.domain.User;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class UserImportResponse {
+    // 是否导入成功 一旦有失败就是导入不成功
+    private Boolean isSuccess;
+    // 总共有多少条数据
+    private Integer total;
+    // 成功数据数
+    private Integer successCount;
+    // 不符合要求数据数
+    private Integer errorCount;
+    // 导入失败数据详情
+    private List<String> errorMessageList;
+    // 成功数据示例
+    private List<User> succesList;
+
+    public static UserImportResponse success(Integer total, List<User> list) {
+        UserImportResponse response = new UserImportResponse();
+        response.setIsSuccess(true);
+        response.setTotal(total);
+        response.setSuccessCount(total);
+        response.setErrorCount(0);
+        response.setErrorMessageList(new ArrayList<>());
+        response.setSuccesList(list);
+        return response;
+    }
+
+    public static UserImportResponse error(Integer total, Integer errorCount, List<String> list) {
+        UserImportResponse response = new UserImportResponse();
+        response.setIsSuccess(false);
+        response.setTotal(total);
+        response.setSuccessCount(total - errorCount);
+        response.setErrorCount(errorCount);
+        response.setErrorMessageList(list);
+        response.setSuccesList(new ArrayList<>());
+        return response;
+    }
+}

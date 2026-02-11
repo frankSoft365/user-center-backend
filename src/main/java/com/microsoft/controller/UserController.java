@@ -1,5 +1,6 @@
 package com.microsoft.controller;
 
+import com.alibaba.excel.EasyExcel;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.microsoft.annotation.AuthCheck;
@@ -7,17 +8,22 @@ import com.microsoft.commen.ErrorCode;
 import com.microsoft.commen.Result;
 import com.microsoft.exception.BusinessException;
 import com.microsoft.model.domain.User;
+import com.microsoft.model.request.UserImportRequest;
 import com.microsoft.model.request.UserLoginRequest;
 import com.microsoft.model.request.UserRegisterRequest;
+import com.microsoft.model.response.UserImportResponse;
 import com.microsoft.model.response.UserLoginResponse;
 import com.microsoft.service.UserService;
 import com.microsoft.utils.CurrentHold;
+import com.microsoft.utils.ExcelParseUtil;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -111,6 +117,19 @@ public class UserController {
         List<User> collect = list.stream().map(user -> userService.getMaskedUser(user)).collect(Collectors.toList());
         log.info("管理员获取用户列表，或筛选结果");
         return Result.success(collect);
+    }
+
+    /**
+     * 管理员批量上传用户 并校验用户信息
+     */
+    @PostMapping("/batchImportUser")
+    @AuthCheck(mustRole = ADMIN_ROLE)
+    public Result<UserImportResponse> batchImportUser(MultipartFile file) {
+        if (file.isEmpty()) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR, "上传文件为空");
+        }
+        UserImportResponse userImportResponse = userService.batchImportUser(file);
+        return Result.success(userImportResponse);
     }
 
     /**
