@@ -1,31 +1,28 @@
 package com.microsoft.controller;
 
-import com.alibaba.excel.EasyExcel;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.microsoft.annotation.AuthCheck;
 import com.microsoft.commen.ErrorCode;
 import com.microsoft.commen.Result;
 import com.microsoft.exception.BusinessException;
-import com.microsoft.model.domain.User;
-import com.microsoft.model.request.UserImportRequest;
-import com.microsoft.model.request.UserLoginRequest;
-import com.microsoft.model.request.UserRegisterRequest;
-import com.microsoft.model.response.UserImportResponse;
-import com.microsoft.model.response.UserLoginResponse;
+import com.microsoft.model.dto.user.UserUpdateRequest;
+import com.microsoft.model.entity.User;
+import com.microsoft.model.dto.user.UserLoginRequest;
+import com.microsoft.model.dto.user.UserRegisterRequest;
+import com.microsoft.model.vo.UserImportVO;
+import com.microsoft.model.vo.UserLoginVO;
+import com.microsoft.model.vo.UserVO;
 import com.microsoft.service.UserService;
 import com.microsoft.utils.CurrentHold;
-import com.microsoft.utils.ExcelParseUtil;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static com.microsoft.constant.UserConstant.ADMIN_ROLE;
 
@@ -61,7 +58,7 @@ public class UserController {
      * 用户登录
      */
     @PostMapping("/login")
-    public Result<UserLoginResponse> userLogin(@RequestBody UserLoginRequest userLoginRequest) {
+    public Result<UserLoginVO> userLogin(@RequestBody UserLoginRequest userLoginRequest) {
         if (userLoginRequest == null) {
             // 参数为空错误
             throw new BusinessException(ErrorCode.PARAM_ERROR, "前端传过来的参数为null");
@@ -72,28 +69,24 @@ public class UserController {
             // 参数为空串
             throw new BusinessException(ErrorCode.PARAM_ERROR, "账户名或密码为空");
         }
-        UserLoginResponse userLoginResponse = userService.userLogin(userAccount, password);
-        return Result.success(userLoginResponse);
+        UserLoginVO userLoginVO = userService.userLogin(userAccount, password);
+        return Result.success(userLoginVO);
     }
 
     /**
      * 用户编辑个人信息 只能编辑 用户名 性别 电话 头像 邮箱
      */
     @PutMapping("/update")
-    public Result<Void> updateUserInfo(@RequestBody User userInfoToUpdate, HttpServletRequest request) {
+    public Result<Void> updateUserInfo(@RequestBody UserUpdateRequest userInfoToUpdate, HttpServletRequest request) {
         // 只能更改自己的用户信息
         if (userInfoToUpdate == null) {
             throw new BusinessException(ErrorCode.PARAM_ERROR, "无法获取更新后用户信息");
         }
         Long currentId = CurrentHold.getCurrentId();
-        UpdateWrapper<User> userUpdateWrapper = new UpdateWrapper<>();
-        userUpdateWrapper.eq("id", currentId);
-        userUpdateWrapper.set("username", userInfoToUpdate.getUsername());
-        userUpdateWrapper.set("gender", userInfoToUpdate.getGender());
-        userUpdateWrapper.set("phone", userInfoToUpdate.getPhone());
-        userUpdateWrapper.set("avatar", userInfoToUpdate.getAvatar());
-        userUpdateWrapper.set("email", userInfoToUpdate.getEmail());
-        boolean update = userService.update(userUpdateWrapper);
+        User user = new User();
+        user.setId(currentId);
+        BeanUtils.copyProperties(userInfoToUpdate, user);
+        boolean update = userService.updateById(user);
         if (!update) {
             throw new BusinessException(ErrorCode.DATABASE_ERROR, "更新用户信息失败");
         }
@@ -106,17 +99,16 @@ public class UserController {
      */
     @AuthCheck(mustRole = ADMIN_ROLE)
     @GetMapping("/search")
-    public Result<List<User>> searchUsers(String username) {
+    public Result<List<UserVO>> searchUsers(String username) {
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
         if (!StringUtils.isAllBlank(username)) {
-            log.info("模糊查询用户名：{}", username);
             queryWrapper.like("username", username);
         }
         // 用户信息脱敏
         List<User> list = userService.list(queryWrapper);
-        List<User> collect = list.stream().map(user -> userService.getMaskedUser(user)).collect(Collectors.toList());
-        log.info("管理员获取用户列表，或筛选结果");
-        return Result.success(collect);
+        List<UserVO> userVOList = userService.getUserVO(list);
+        log.info("管理员获取用户列表");
+        return Result.success(userVOList);
     }
 
     /**
@@ -124,25 +116,25 @@ public class UserController {
      */
     @PostMapping("/batchImportUser")
     @AuthCheck(mustRole = ADMIN_ROLE)
-    public Result<UserImportResponse> batchImportUser(MultipartFile file) {
+    public Result<UserImportVO> batchImportUser(MultipartFile file) {
         if (file.isEmpty()) {
             throw new BusinessException(ErrorCode.PARAM_ERROR, "上传文件为空");
         }
-        UserImportResponse userImportResponse = userService.batchImportUser(file);
-        return Result.success(userImportResponse);
+        UserImportVO userImportVO = userService.verifyAndBatchImportUser(file);
+        return Result.success(userImportVO);
     }
 
     /**
      * 根据用户的登录态获取用户信息
      */
     @GetMapping("/current")
-    public Result<User> getCurrentUser() {
+    public Result<UserVO> getCurrentUser() {
         Long currentId = CurrentHold.getCurrentId();
         // 返回用户信息
         log.info("获取当前登录用户的信息");
         User user = userService.getById(currentId);
-        User maskedUser = userService.getMaskedUser(user);
-        return Result.success(maskedUser);
+        UserVO userVO = userService.getUserVO(user);
+        return Result.success(userVO);
     }
 
     /**

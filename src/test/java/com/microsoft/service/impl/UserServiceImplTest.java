@@ -1,6 +1,6 @@
 package com.microsoft.service.impl;
 
-import com.microsoft.model.domain.User;
+import com.microsoft.model.entity.User;
 import com.microsoft.service.UserService;
 import jakarta.annotation.Resource;
 import org.junit.jupiter.api.Assertions;

@@ -1,4 +1,4 @@
-package com.microsoft.model.domain;
+package com.microsoft.model.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;

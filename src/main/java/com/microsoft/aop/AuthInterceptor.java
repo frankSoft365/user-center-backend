@@ -4,7 +4,7 @@ import com.microsoft.annotation.AuthCheck;
 import com.microsoft.commen.ErrorCode;
 import com.microsoft.commen.UserRoleEnum;
 import com.microsoft.exception.BusinessException;
-import com.microsoft.model.domain.User;
+import com.microsoft.model.entity.User;
 import com.microsoft.service.UserService;
 import com.microsoft.utils.CurrentHold;
 import jakarta.annotation.Resource;

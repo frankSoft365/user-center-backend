@@ -1,10 +1,10 @@
 package com.microsoft.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.microsoft.model.domain.User;
-import com.microsoft.model.request.UserImportRequest;
-import com.microsoft.model.response.UserImportResponse;
-import com.microsoft.model.response.UserLoginResponse;
+import com.microsoft.model.entity.User;
+import com.microsoft.model.vo.UserImportVO;
+import com.microsoft.model.vo.UserLoginVO;
+import com.microsoft.model.vo.UserVO;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -19,16 +19,20 @@ public interface UserService extends IService<User> {
     /**
      * 用户登录 校验账户名 密码是否合法 根据账户名查询用户密码比对 相同则成功
      */
-    UserLoginResponse userLogin(String userAccount, String password);
+    UserLoginVO userLogin(String userAccount, String password);
 
     /**
      * 批量导入的用户信息
      */
-    UserImportResponse batchImportUser(MultipartFile file);
+    UserImportVO verifyAndBatchImportUser(MultipartFile file);
 
     /**
-     * 用户脱敏
+     * 获取单个用户VO
      */
-    User getMaskedUser(User originUser);
+    UserVO getUserVO(User user);
 
+    /**
+     * 获取集合的用户VO
+     */
+    List<UserVO> getUserVO(List<User> userList);
 }

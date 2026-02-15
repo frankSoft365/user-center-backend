@@ -7,10 +7,11 @@ import com.microsoft.commen.ErrorCode;
 import com.microsoft.commen.UserRoleEnum;
 import com.microsoft.exception.BusinessException;
 import com.microsoft.mapper.UserMapper;
-import com.microsoft.model.domain.User;
-import com.microsoft.model.request.UserImportRequest;
-import com.microsoft.model.response.UserImportResponse;
-import com.microsoft.model.response.UserLoginResponse;
+import com.microsoft.model.entity.User;
+import com.microsoft.model.dto.user.UserImportRequest;
+import com.microsoft.model.vo.UserImportVO;
+import com.microsoft.model.vo.UserLoginVO;
+import com.microsoft.model.vo.UserVO;
 import com.microsoft.service.UserService;
 import com.microsoft.utils.ExcelParseUtil;
 import com.microsoft.utils.JwtUtils;
@@ -20,6 +21,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.executor.BatchResult;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -98,7 +100,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
      * 用户登录
      */
     @Override
-    public UserLoginResponse userLogin(String userAccount, String password) {
+    public UserLoginVO userLogin(String userAccount, String password) {
         // 校验账户名与密码是否合法
         // 用户账户名 密码 校验密码不能为空或者空字符串
         if (StringUtils.isAllBlank(userAccount, password)) {
@@ -136,36 +138,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         dataMap.put("userAccount", user.getUserAccount());
         String token = JwtUtils.generateToken(dataMap);
         log.info("用户登录成功");
-        return new UserLoginResponse(user.getId(), user.getUserAccount(), token);
+        return new UserLoginVO(user.getId(), user.getUserAccount(), token);
     }
 
     @Override
-    public UserImportResponse batchImportUser(MultipartFile file) {
-        List<UserImportRequest> userImportRequests = ExcelParseUtil.parseExcel(file, UserImportRequest.class);
-        UserImportResponse userImportResponse = verifyUserImportList(userImportRequests);
-        if (userImportResponse.getIsSuccess()) {
-            List<User> succesList = userImportResponse.getSuccesList();
-            List<User> list = succesList.stream().map(item -> {
-                item.setCreateTime(LocalDateTime.now());
-                item.setUpdateTime(LocalDateTime.now());
-                item.setPassword(DigestUtils.md5Hex(item.getPassword()));
-                return item;
-            }).toList();
-            List<BatchResult> insert = userMapper.insert(list);
-            if (insert.isEmpty()) {
-                throw new BusinessException(ErrorCode.DATABASE_ERROR, "导入失败");
-            }
-            List<User> collect = userImportResponse.getSuccesList().stream().map(this::getMaskedUser).toList();
-            userImportResponse.setSuccesList(collect);
-            return userImportResponse;
-        }
-        return userImportResponse;
-    }
-
-    private UserImportResponse verifyUserImportList(List<UserImportRequest> userImportRequestList) {
+    public UserImportVO verifyAndBatchImportUser(MultipartFile file) {
         // 拿到经过解析封装后的用户列表 在插入数据库之前进行校验
         // 校验无误 isSuccess : true
         // 校验有误 isSuccess : false 展示具体的所务信息
+        List<UserImportRequest> userImportRequestList = ExcelParseUtil.parseExcel(file, UserImportRequest.class);
 
         if (CollectionUtils.isEmpty(userImportRequestList)) {
             throw new BusinessException(ErrorCode.PARAM_ERROR, "上传的表格为空");
@@ -204,11 +185,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
         wrapper.select(User::getUserAccount, User::getPhone, User::getEmail);
 
-        List<User> list = userMapper.selectList(wrapper);
+        List<User> existList = userMapper.selectList(wrapper);
 
-        Set<String> existUserAccount = list.stream().map(User::getUserAccount).filter(StringUtils::isNotBlank).collect(Collectors.toSet());
-        Set<String> existPhone = list.stream().map(User::getPhone).filter(StringUtils::isNotBlank).collect(Collectors.toSet());
-        Set<String> existEmail = list.stream().map(User::getEmail).filter(StringUtils::isNotBlank).collect(Collectors.toSet());
+        Set<String> existUserAccount = existList.stream().map(User::getUserAccount).filter(StringUtils::isNotBlank).collect(Collectors.toSet());
+        Set<String> existPhone = existList.stream().map(User::getPhone).filter(StringUtils::isNotBlank).collect(Collectors.toSet());
+        Set<String> existEmail = existList.stream().map(User::getEmail).filter(StringUtils::isNotBlank).collect(Collectors.toSet());
 
         Set<String> seenUserAccount = new HashSet<>();
         Set<String> seenPhone = new HashSet<>();
@@ -309,30 +290,38 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             }
         }
         if (errorMessageList.isEmpty()) {
-            return UserImportResponse.success(total, succesList);
+            List<User> list = succesList.stream().map(user -> {
+                user.setCreateTime(LocalDateTime.now());
+                user.setUpdateTime(LocalDateTime.now());
+                user.setPassword(DigestUtils.md5Hex(user.getPassword()));
+                return user;
+            }).toList();
+            List<BatchResult> insert = userMapper.insert(list);
+            if (insert.isEmpty()) {
+                throw new BusinessException(ErrorCode.DATABASE_ERROR, "导入失败");
+            }
+            List<UserVO> userVOList = getUserVO(list);
+            return UserImportVO.success(total, userVOList);
         }
-        return UserImportResponse.error(total, errorMessageList.size(), errorMessageList);
+        return UserImportVO.error(total, errorMessageList.size(), errorMessageList);
     }
 
-
-
     @Override
-    public User getMaskedUser(User originUser) {
-        if (originUser == null) {
+    public UserVO getUserVO(User user) {
+        if (user == null) {
             return null;
         }
-        User maskedUser = new User();
-        maskedUser.setUsername(originUser.getUsername());
-        maskedUser.setId(originUser.getId());
-        maskedUser.setGender(originUser.getGender());
-        maskedUser.setPhone(originUser.getPhone());
-        maskedUser.setAvatar(originUser.getAvatar());
-        maskedUser.setCreateTime(originUser.getCreateTime());
-        maskedUser.setUserStatus(originUser.getUserStatus());
-        maskedUser.setEmail(originUser.getEmail());
-        maskedUser.setUserAccount(originUser.getUserAccount());
-        maskedUser.setRole(originUser.getRole());
-        return maskedUser;
+        UserVO userVO = new UserVO();
+        BeanUtils.copyProperties(user, userVO);
+        return userVO;
+    }
+
+    @Override
+    public List<UserVO> getUserVO(List<User> userList) {
+        if (CollectionUtils.isEmpty(userList)) {
+            return new ArrayList<>();
+        }
+        return userList.stream().map(this::getUserVO).toList();
     }
 
 }
