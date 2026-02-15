@@ -1,6 +1,6 @@
 package com.microsoft;
 
-import com.microsoft.commen.UserRoleEnum;
+import com.microsoft.model.enums.UserRoleEnum;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 

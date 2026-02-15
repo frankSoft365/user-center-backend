@@ -1,6 +1,5 @@
 package com.microsoft.model.vo;
 
-import com.microsoft.model.entity.User;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

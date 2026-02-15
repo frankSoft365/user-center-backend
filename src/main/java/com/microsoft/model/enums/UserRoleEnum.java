@@ -1,4 +1,4 @@
-package com.microsoft.commen;
+package com.microsoft.model.enums;
 
 import lombok.Getter;
 

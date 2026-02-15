@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.microsoft.commen.ErrorCode;
-import com.microsoft.commen.UserRoleEnum;
+import com.microsoft.model.enums.UserRoleEnum;
 import com.microsoft.exception.BusinessException;
 import com.microsoft.mapper.UserMapper;
 import com.microsoft.model.entity.User;

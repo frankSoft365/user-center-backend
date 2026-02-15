@@ -2,7 +2,7 @@ package com.microsoft.aop;
 
 import com.microsoft.annotation.AuthCheck;
 import com.microsoft.commen.ErrorCode;
-import com.microsoft.commen.UserRoleEnum;
+import com.microsoft.model.enums.UserRoleEnum;
 import com.microsoft.exception.BusinessException;
 import com.microsoft.model.entity.User;
 import com.microsoft.service.UserService;
